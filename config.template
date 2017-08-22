@@ -1,0 +1,5 @@
+project_path = ''
+solr_server = ''
+solr_core = ''
+
+n_candidates = 25
