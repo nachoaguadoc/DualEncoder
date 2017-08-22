@@ -38,6 +38,8 @@ url_query = solr_server + col_name + 'select?defType=edismax&indent=on&bq=respon
 r = requests.get(url_query).json()
 
 candidates_objects = r['response']['docs']
+
+# Canditates to be answers to the given question
 candidates = [ c['content'] for c in candidates_objects ]
 print(candidates)
 
@@ -74,16 +76,22 @@ if __name__ == '__main__':
   # estimator.predict doesn't work without this line
   estimator._targets_info = tf.contrib.learn.estimators.tensor_signature.TensorSignature(tf.constant(0, shape=[1,1]))
 
+  # Question from the user
   print("Context: {}".format(INPUT_CONTEXT))
   scores = []
-  highest = 0
+
   final_answer = 'I do not understand. Can you please ask another question?'
   position = 0
+
+  # We iterate over all the possible answers and score them with the Dual Encoder
   for r in POTENTIAL_RESPONSES:
     prob = estimator.predict(input_fn=lambda: get_features(INPUT_CONTEXT, r))
     results = next(prob)
     scores.append(results)
     print(r, results)
+
+  # We sort them by score and write the results in a .txt file that will be read later.
+  # If you are only interested in the best answer from the Dual Encoder, just take nn_candidates[0]
   nn_candidates = sorted(range(len(scores)), key=lambda i: scores[i])[-3:][::-1]
   nn_candidates = POTENTIAL_RESPONSES[nn_candidates[0]] + "___***___" + POTENTIAL_RESPONSES[nn_candidates[1]]+ "___***___" + POTENTIAL_RESPONSES[nn_candidates[2]] + "___|||___"
   to_write = nn_candidates +  "___***___".join(candidates[:3])
